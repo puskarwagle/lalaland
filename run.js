@@ -7,16 +7,22 @@ import chrome from 'selenium-webdriver/chrome.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration - Change these values to your desired plot numbers
+// Configuration - Change these values to your desired inputs
 const CONFIG = {
     baseUrl: 'http://localhost:3000',
-    plotPreferences: {
-        first: '3016',   // 1st preference
-        second: '3009',  // 2nd preference
-        third: '3000',   // 3rd preference
-        fourth: '3004'   // 4th preference
+    userInfo: {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phone: '+1234567890'
     },
-    selectDelay: 500 // 500ms delay between selections
+    plotPreferences: {
+        first: '3022',   // 1st preference
+        second: '3041',  // 2nd preference
+        third: '3056',   // 3rd preference
+        fourth: '3070'   // 4th preference
+    },
+    selectDelay: 1 // 500ms delay between selections
 };
 
 function sleep(ms) {
@@ -49,17 +55,20 @@ async function startServer() {
 }
 
 async function automateForm() {
-    console.log('Starting Selenium automation...');
+    console.log('Starting automation...\n');
 
-    // Set up Chrome options to use existing Chrome profile
     const options = new chrome.Options();
-    // Uncomment the line below to use your existing Chrome profile
-    // options.addArguments('--user-data-dir=C:/Users/YourUsername/AppData/Local/Google/Chrome/User Data');
+
+    // Disable automation detection
+    options.excludeSwitches('enable-automation');
+    options.addArguments('--disable-blink-features=AutomationControlled');
 
     const driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
         .build();
+
+    console.log('✓ Chrome opened!\n');
 
     try {
         console.log(`Navigating to ${CONFIG.baseUrl}...`);
@@ -74,32 +83,95 @@ async function automateForm() {
 
         console.log('Form page loaded, starting automation...');
 
+        // START TIMER HERE - after form loads
+        const startTime = Date.now();
+
         // Wait for the form to be visible
         await driver.wait(until.elementLocated(By.css('form')), 5000);
 
-        // Select 1st preference
-        console.log(`Selecting 1st preference: ${CONFIG.plotPreferences.first}`);
-        const select1 = await driver.findElement(By.name('hilltopr2_1st_preference'));
-        await select1.sendKeys(CONFIG.plotPreferences.first);
-        await sleep(CONFIG.selectDelay);
+        // Fill in text input fields
+        console.log('Filling in user information...');
 
-        // Select 2nd preference
-        console.log(`Selecting 2nd preference: ${CONFIG.plotPreferences.second}`);
-        const select2 = await driver.findElement(By.name('hilltopr2_2nd_preference'));
-        await select2.sendKeys(CONFIG.plotPreferences.second);
-        await sleep(CONFIG.selectDelay);
+        // Find and fill first name input
+        try {
+            const firstNameInput = await driver.findElement(By.css('input[type="text"][name*="first" i], input[type="text"][id*="first" i]'));
+            await firstNameInput.clear();
+            await firstNameInput.sendKeys(CONFIG.userInfo.firstName);
+            console.log(`First name set to: ${CONFIG.userInfo.firstName}`);
+            await sleep(CONFIG.selectDelay);
+        } catch (e) {
+            console.log('First name field not found, skipping...');
+        }
 
-        // Select 3rd preference
-        console.log(`Selecting 3rd preference: ${CONFIG.plotPreferences.third}`);
-        const select3 = await driver.findElement(By.name('hilltopr2_3rd_preference'));
-        await select3.sendKeys(CONFIG.plotPreferences.third);
-        await sleep(CONFIG.selectDelay);
+        // Find and fill last name input
+        try {
+            const lastNameInput = await driver.findElement(By.css('input[type="text"][name*="last" i], input[type="text"][id*="last" i]'));
+            await lastNameInput.clear();
+            await lastNameInput.sendKeys(CONFIG.userInfo.lastName);
+            console.log(`Last name set to: ${CONFIG.userInfo.lastName}`);
+            await sleep(CONFIG.selectDelay);
+        } catch (e) {
+            console.log('Last name field not found, skipping...');
+        }
 
-        // Select 4th preference
-        console.log(`Selecting 4th preference: ${CONFIG.plotPreferences.fourth}`);
-        const select4 = await driver.findElement(By.name('hilltopr2_4th_preference'));
-        await select4.sendKeys(CONFIG.plotPreferences.fourth);
-        await sleep(CONFIG.selectDelay);
+        // Find and fill email input
+        try {
+            const emailInput = await driver.findElement(By.css('input[type="email"], input[name*="email" i], input[id*="email" i]'));
+            await emailInput.clear();
+            await emailInput.sendKeys(CONFIG.userInfo.email);
+            console.log(`Email set to: ${CONFIG.userInfo.email}`);
+            await sleep(CONFIG.selectDelay);
+        } catch (e) {
+            console.log('Email field not found, skipping...');
+        }
+
+        // Find and fill phone input
+        try {
+            const phoneInput = await driver.findElement(By.css('input[type="tel"], input[name*="phone" i], input[id*="phone" i]'));
+            await phoneInput.clear();
+            await phoneInput.sendKeys(CONFIG.userInfo.phone);
+            console.log(`Phone set to: ${CONFIG.userInfo.phone}`);
+            await sleep(CONFIG.selectDelay);
+        } catch (e) {
+            console.log('Phone field not found, skipping...');
+        }
+
+        // Find all select elements (dropdowns) on the page
+        console.log('Finding all select elements on the page...');
+        const selectElements = await driver.findElements(By.css('select'));
+        console.log(`Found ${selectElements.length} select elements`);
+
+        const preferences = [
+            CONFIG.plotPreferences.first,
+            CONFIG.plotPreferences.second,
+            CONFIG.plotPreferences.third,
+            CONFIG.plotPreferences.fourth
+        ];
+
+        // Loop through each select element and set values
+        for (let i = 0; i < Math.min(selectElements.length, preferences.length); i++) {
+            const selectElement = selectElements[i];
+            const preferenceValue = preferences[i];
+
+            if (!preferenceValue) continue;
+
+            try {
+                console.log(`Selecting option ${i + 1}: ${preferenceValue}`);
+
+                // Click on the select to reveal options
+                await selectElement.click();
+                await sleep(200);
+
+                // Find the option with the desired value
+                const option = await selectElement.findElement(By.css(`option[value="${preferenceValue}"]`));
+                await option.click();
+
+                console.log(`Selected preference ${i + 1}: ${preferenceValue}`);
+                await sleep(CONFIG.selectDelay);
+            } catch (error) {
+                console.log(`Could not select value ${preferenceValue} in dropdown ${i + 1}:`, error.message);
+            }
+        }
 
         // Click submit button
         console.log('Clicking submit button...');
@@ -111,14 +183,23 @@ async function automateForm() {
         // Wait a bit to see the result
         await sleep(3000);
 
-        console.log('Automation completed!');
+        const endTime = Date.now();
+        const timeTaken = endTime - startTime;
+
+        console.log('\n========================================');
+        console.log('✓ Automation completed successfully!');
+        console.log(`⏱️  Total time: ${timeTaken} milliseconds (${(timeTaken / 1000).toFixed(2)} seconds)`);
+        console.log('========================================\n');
+        console.log('Browser will remain open. Close it manually when done.');
 
     } catch (error) {
-        console.error('Automation failed:', error);
+        console.error('\n❌ Automation failed:', error);
+        const endTime = Date.now();
+        const timeTaken = endTime - startTime;
+        console.error(`Time before failure: ${timeTaken} milliseconds`);
     } finally {
-        // Uncomment the line below if you want to close the browser after automation
+        // Don't close the browser so user can see the result and their session remains
         // await driver.quit();
-        console.log('\nBrowser will remain open. Close it manually when done.');
     }
 }
 

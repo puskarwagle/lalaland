@@ -1,12 +1,13 @@
 # Land Form Automation
 
-This project automates the land plot selection form using Node.js, Express, and Playwright.
+This project automates the land plot selection form using Node.js, Express, and Selenium WebDriver.
 
 ## Features
 
-1. Express server that serves the HTML files
+1. Combined Express server and Selenium automation in one script
 2. Countdown timer on index.html that redirects to land.html after 10 seconds
-3. Playwright automation script that:
+3. Selenium automation that:
+   - Opens Chrome browser
    - Waits for the page to load
    - Selects plot numbers for all 4 preference options
    - Waits 500ms between each selection
@@ -20,27 +21,22 @@ npm install
 
 This will install:
 - express: Web server
-- playwright: Browser automation
+- selenium-webdriver: Browser automation
 
-After installation, run:
-```bash
-npx playwright install
-```
-
-This downloads the necessary browser binaries for Playwright.
+Make sure you have Chrome browser installed on your system.
 
 ## Configuration
 
-Edit the plot preferences in `automation.js`:
+Edit the plot preferences in `run.js`:
 
 ```javascript
 const CONFIG = {
     baseUrl: 'http://localhost:3000',
     plotPreferences: {
-        first: '3006',   // 1st preference
-        second: '3007',  // 2nd preference
-        third: '3008',   // 3rd preference
-        fourth: '3009'   // 4th preference
+        first: '3016',   // 1st preference
+        second: '3009',  // 2nd preference
+        third: '3000',   // 3rd preference
+        fourth: '3004'   // 4th preference
     },
     selectDelay: 500 // 500ms delay between selections
 };
@@ -50,41 +46,43 @@ Change the plot numbers to your desired values.
 
 ## Usage
 
-### Step 1: Start the server
+### IMPORTANT: Using Your Logged-In Chrome Browser
 
-In one terminal:
+To use your actual Chrome browser with all your login sessions:
+
+**Step 1:** Close ALL Chrome windows
+
+**Step 2:** Run the batch file to start Chrome with remote debugging:
+```bash
+start-chrome.bat
+```
+
+**Step 3:** Run the automation:
 ```bash
 npm start
 ```
-
-This will start the Express server on http://localhost:3000
-
-### Step 2: Run the automation
-
-In another terminal (while the server is running):
-```bash
-npm run automate
-```
+(or `node automation.js` if you don't need the local server)
 
 This will:
-1. Open a browser
-2. Navigate to http://localhost:3000
-3. Wait for the countdown timer (10 seconds)
-4. Automatically redirect to land.html
-5. Select the configured plot numbers
-6. Submit the form
+1. Connect to your logged-in Chrome browser
+2. Fill in the form fields (name, email, phone)
+3. Select all 4 plot preferences
+4. Submit the form
+5. Show the total time taken in milliseconds
+
+Press Ctrl+C to stop the server when done.
 
 ## Files
 
-- `server.js` - Express server that serves the HTML files
-- `automation.js` - Playwright automation script
+- `run.js` - Combined Express server and Selenium automation script
 - `index.html` - Landing page with countdown timer
 - `land.html` - Form page with plot selection
 - `package.json` - Project dependencies
 
 ## Notes
 
-- The automation runs with `headless: false` so you can see what's happening. Change to `headless: true` in `automation.js` to run in background.
-- The server runs on port 3000. Make sure this port is available.
-- The automation waits 500ms between each dropdown selection as specified.
+- The browser will remain open after automation completes so you can see the result
+- The server runs on port 3000. Make sure this port is available
+- The automation waits 500ms between each dropdown selection as specified
+- For real-world use, change the `baseUrl` in CONFIG to your actual form URL
 # lalaland
