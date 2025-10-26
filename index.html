@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .timer-container {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .timer {
+            font-size: 120px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .message {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <div class="message">Page will redirect in:</div>
+        <div class="timer" id="countdown">10</div>
+    </div>
+
+    <script>
+        let countdown = 10;
+        const timerElement = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            countdown--;
+            timerElement.textContent = countdown;
+
+            if (countdown <= 0) {
+                clearInterval(timer);
+                window.location.href = '/land.html';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "landland-automation",
+  "version": "1.0.0",
+  "description": "Express server with Playwright automation for land form",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "automate": "node automation.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "playwright": "^1.41.0"
+  },
+  "type": "module"
+}
