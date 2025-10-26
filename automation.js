@@ -4,10 +4,10 @@ import { chromium } from 'playwright';
 const CONFIG = {
     baseUrl: 'http://localhost:3000',
     plotPreferences: {
-        first: '3006',   // 1st preference
-        second: '3007',  // 2nd preference
-        third: '3008',   // 3rd preference
-        fourth: '3009'   // 4th preference
+        first: '3016',   // 1st preference
+        second: '3009',  // 2nd preference
+        third: '3000',   // 3rd preference
+        fourth: '3004'   // 4th preference
     },
     selectDelay: 500 // 500ms delay between selections
 };

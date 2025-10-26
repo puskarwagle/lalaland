@@ -1,15 +1,14 @@
 {
   "name": "landland-automation",
   "version": "1.0.0",
-  "description": "Express server with Playwright automation for land form",
-  "main": "server.js",
+  "description": "Express server with Selenium automation for land form",
+  "main": "run.js",
   "scripts": {
-    "start": "node server.js",
-    "automate": "node automation.js"
+    "start": "node run.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "playwright": "^1.41.0"
+    "selenium-webdriver": "^4.16.0"
   },
   "type": "module"
 }
