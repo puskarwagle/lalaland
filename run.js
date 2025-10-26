@@ -20,7 +20,8 @@ const CONFIG = {
         first: '3022',   // 1st preference
         second: '3041',  // 2nd preference
         third: '3056',   // 3rd preference
-        fourth: '3070'   // 4th preference
+        fourth: '3009' ,
+         fifth: '3070'  // 4th preference
     },
     selectDelay: 1 // 500ms delay between selections
 };
@@ -145,7 +146,9 @@ async function automateForm() {
             CONFIG.plotPreferences.first,
             CONFIG.plotPreferences.second,
             CONFIG.plotPreferences.third,
-            CONFIG.plotPreferences.fourth
+            CONFIG.plotPreferences.fourth,
+                        CONFIG.plotPreferences.fifth
+
         ];
 
         // Loop through each select element and set values
@@ -160,7 +163,7 @@ async function automateForm() {
 
                 // Click on the select to reveal options
                 await selectElement.click();
-                await sleep(200);
+                await sleep(2);
 
                 // Find the option with the desired value
                 const option = await selectElement.findElement(By.css(`option[value="${preferenceValue}"]`));
@@ -181,7 +184,7 @@ async function automateForm() {
         console.log('Form submitted successfully!');
 
         // Wait a bit to see the result
-        await sleep(3000);
+        await sleep(3);
 
         const endTime = Date.now();
         const timeTaken = endTime - startTime;
