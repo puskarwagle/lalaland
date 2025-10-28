@@ -9,30 +9,30 @@ import path from 'path';
 // ============================================
 const CONFIG = {
     // Target URL - change this to your auction site
-    lalaurl: 'https://info.birlingcommunity.com.au/lot-nomination-form-stage-5-release-1?utm_campaign=112457207-The%20Hilltop%20Stage%203&utm_medium=email&_hsenc=p2ANqtz-_d1TbHfcYG3mhilGj71vftIBbiIKQ2l4B6gVU2J9cXTvuO9kvk3LcGENHHVVlPYwp2R4nemsKvBq0SuKXlO55WR7nQPg&_hsmi=15142166&utm_content=15142166&utm_source=hs_email',
+    lalaurl: 'https://info.birlingcommunity.com.au/lot-nomination-form-stage-5-release-1?utm_campaign=112457207-The%20Hilltop%20Stage%203&utm_medium=email&_hsenc=p2ANqtz-9Vtjea8IP9T8VnL1zXsLgoo188SyVeEE41isy3ZFm21avNee40jOuRNAgF2t0uQReNxtPrFRkd-y1PdHjrpGzcrFH2xA&_hsmi=15142166&utm_content=15142166&utm_source=hs_email',
  
     // Deepa 0449699679
-    // de_pals@yahoo.com
+    // de_pals@yahoo.com 
     // Lot 1 :5015
     // Lot2:5008
 
     // User information to fill in the form
     userInfo: {
-        firstName: 'Kedr',
-        lastName: 'bajain',
-        email: 'kedeep2003@yahoo.com',
-        phone: '+0431822833'
+        firstName: 'Deepa',
+        lastName: 'adhikari',
+        email: 'de_pals@yahoo.com',
+        phone: '+0449699679'
     },
 
     // Plot preferences for dropdown selections
     plotPreferences: {
-        first: '5007',
-        second: '5030',
-        third: '5007',
-        fourth: '5030'
+        first: '5015',
+        second: '5008',
+        third: '5015',
+        fourth: '5008'
     },
 
-    // Monitoring settings 4.9
+    // Monitoring settings 4.1
     checkInterval: 100,        // Check for form every 100ms
     pageReloadCheckInterval: 200,  // Check for page reload every 1s
     submitDelay: 100,          // Delay before clicking submit
