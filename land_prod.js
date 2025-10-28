@@ -35,8 +35,7 @@ const CONFIG = {
     // Monitoring settings 4.9
     checkInterval: 100,        // Check for form every 100ms
     pageReloadCheckInterval: 200,  // Check for page reload every 1s
-    submitDelay: 100,          // Delay before clicking submit
-    fieldFillDelay: 50,        // Delay between filling fields
+    totalTimeTaken: 4900,      // Total time to fill and submit form (ms) - 4.9 seconds
 };
 
 // ============================================
@@ -150,13 +149,32 @@ async function fillForm(driver, form) {
     const startTime = Date.now();
 
     try {
+        // Get dropdown count first to calculate total operations
+        const selectElements = await form.findElements(By.css('select'));
+        const preferences = [
+            CONFIG.plotPreferences.first,
+            CONFIG.plotPreferences.second,
+            CONFIG.plotPreferences.third,
+            CONFIG.plotPreferences.fourth
+        ];
+        const totalOperations = 4 + Math.min(selectElements.length, preferences.length); // 4 text fields + dropdowns
+        const delayPerOperation = CONFIG.totalTimeTaken / totalOperations;
+
+        // Helper function to add appropriate delay
+        const addDelay = async () => {
+            const elapsed = Date.now() - startTime;
+            const targetTime = (arguments[0] || 0) * delayPerOperation;
+            const remainingDelay = Math.max(0, targetTime - elapsed);
+            if (remainingDelay > 0) await sleep(remainingDelay);
+        };
+
         // Fill first name
         const firstNameInput = await findInputByLabel(driver, ['first', 'fname', 'firstname'], 'text');
         if (firstNameInput) {
             await firstNameInput.clear();
             await firstNameInput.sendKeys(CONFIG.userInfo.firstName);
             log(`First name: ${CONFIG.userInfo.firstName}`, 'success');
-            await sleep(CONFIG.fieldFillDelay);
+            await addDelay(1);
         }
 
         // Fill last name
@@ -165,7 +183,7 @@ async function fillForm(driver, form) {
             await lastNameInput.clear();
             await lastNameInput.sendKeys(CONFIG.userInfo.lastName);
             log(`Last name: ${CONFIG.userInfo.lastName}`, 'success');
-            await sleep(CONFIG.fieldFillDelay);
+            await addDelay(2);
         }
 
         // Fill email
@@ -177,7 +195,7 @@ async function fillForm(driver, form) {
             await emailInput.clear();
             await emailInput.sendKeys(CONFIG.userInfo.email);
             log(`Email: ${CONFIG.userInfo.email}`, 'success');
-            await sleep(CONFIG.fieldFillDelay);
+            await addDelay(3);
         }
 
         // Fill phone
@@ -189,19 +207,11 @@ async function fillForm(driver, form) {
             await phoneInput.clear();
             await phoneInput.sendKeys(CONFIG.userInfo.phone);
             log(`Phone: ${CONFIG.userInfo.phone}`, 'success');
-            await sleep(CONFIG.fieldFillDelay);
+            await addDelay(4);
         }
 
         // Fill dropdown selections
-        const selectElements = await form.findElements(By.css('select'));
         log(`Found ${selectElements.length} dropdown(s)`, 'info');
-
-        const preferences = [
-            CONFIG.plotPreferences.first,
-            CONFIG.plotPreferences.second,
-            CONFIG.plotPreferences.third,
-            CONFIG.plotPreferences.fourth
-        ];
 
         for (let i = 0; i < Math.min(selectElements.length, preferences.length); i++) {
             const selectElement = selectElements[i];
@@ -217,14 +227,16 @@ async function fillForm(driver, form) {
                 await option.click();
 
                 log(`Dropdown ${i + 1}: ${preferenceValue}`, 'success');
-                await sleep(CONFIG.fieldFillDelay);
+                await addDelay(5 + i);
             } catch (error) {
                 log(`Could not select ${preferenceValue} in dropdown ${i + 1}`, 'warning');
             }
         }
 
-        // Submit the form
-        await sleep(CONFIG.submitDelay);
+        // Ensure we've reached target time before submitting
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, CONFIG.totalTimeTaken - elapsed - 100); // Reserve 100ms for submit
+        if (remainingTime > 0) await sleep(remainingTime);
 
         const submitButton = await form.findElement(By.css('input[type="submit"], button[type="submit"]')).catch(() => null);
         if (submitButton) {
