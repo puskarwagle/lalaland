@@ -34,7 +34,7 @@ const CONFIG = {
 
     // Monitoring settings 4.1
     checkInterval: 100,        // Check for form every 100ms
-    pageReloadCheckInterval: 200,  // Check for page reload every 1s
+    pageReloadCheckInterval: 200,  // Check for page reload every 200s
     totalTimeTaken: 4100,      // Total time to fill and submit form (ms) - 4.1 seconds
 };
 

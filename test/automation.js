@@ -16,7 +16,7 @@ const CONFIG = {
         third: '3000',   // 3rd preference
         fourth: '3004'   // 4th preference
     },
-    selectDelay: 500 // 500ms delay between selections
+    totalTimeTaken: 5000 // Total time to fill and submit form (ms) - 5 seconds for testing
 };
 
 function sleep(ms) {
@@ -58,6 +58,25 @@ async function automateForm() {
         // Wait for the form to be visible
         await driver.wait(until.elementLocated(By.css('form')), 5000);
 
+        // Find all select elements first to calculate total operations
+        const selectElements = await driver.findElements(By.css('select'));
+        const preferences = [
+            CONFIG.plotPreferences.first,
+            CONFIG.plotPreferences.second,
+            CONFIG.plotPreferences.third,
+            CONFIG.plotPreferences.fourth
+        ];
+        const totalOperations = 4 + Math.min(selectElements.length, preferences.length); // 4 text fields + dropdowns
+        const delayPerOperation = CONFIG.totalTimeTaken / totalOperations;
+
+        // Helper function to add appropriate delay
+        const addDelay = async (operationNumber) => {
+            const elapsed = Date.now() - startTime;
+            const targetTime = operationNumber * delayPerOperation;
+            const remainingDelay = Math.max(0, targetTime - elapsed);
+            if (remainingDelay > 0) await sleep(remainingDelay);
+        };
+
         // Fill in text input fields
         console.log('Filling in user information...');
 
@@ -67,7 +86,7 @@ async function automateForm() {
             await firstNameInput.clear();
             await firstNameInput.sendKeys(CONFIG.userInfo.firstName);
             console.log(`First name set to: ${CONFIG.userInfo.firstName}`);
-            await sleep(CONFIG.selectDelay);
+            await addDelay(1);
         } catch (e) {
             console.log('First name field not found, skipping...');
         }
@@ -78,7 +97,7 @@ async function automateForm() {
             await lastNameInput.clear();
             await lastNameInput.sendKeys(CONFIG.userInfo.lastName);
             console.log(`Last name set to: ${CONFIG.userInfo.lastName}`);
-            await sleep(CONFIG.selectDelay);
+            await addDelay(2);
         } catch (e) {
             console.log('Last name field not found, skipping...');
         }
@@ -89,7 +108,7 @@ async function automateForm() {
             await emailInput.clear();
             await emailInput.sendKeys(CONFIG.userInfo.email);
             console.log(`Email set to: ${CONFIG.userInfo.email}`);
-            await sleep(CONFIG.selectDelay);
+            await addDelay(3);
         } catch (e) {
             console.log('Email field not found, skipping...');
         }
@@ -100,22 +119,13 @@ async function automateForm() {
             await phoneInput.clear();
             await phoneInput.sendKeys(CONFIG.userInfo.phone);
             console.log(`Phone set to: ${CONFIG.userInfo.phone}`);
-            await sleep(CONFIG.selectDelay);
+            await addDelay(4);
         } catch (e) {
             console.log('Phone field not found, skipping...');
         }
 
-        // Find all select elements (dropdowns) on the page
-        console.log('Finding all select elements on the page...');
-        const selectElements = await driver.findElements(By.css('select'));
+        // Fill dropdown selections
         console.log(`Found ${selectElements.length} select elements`);
-
-        const preferences = [
-            CONFIG.plotPreferences.first,
-            CONFIG.plotPreferences.second,
-            CONFIG.plotPreferences.third,
-            CONFIG.plotPreferences.fourth
-        ];
 
         // Loop through each select element and set values
         for (let i = 0; i < Math.min(selectElements.length, preferences.length); i++) {
@@ -129,18 +139,23 @@ async function automateForm() {
 
                 // Click on the select to reveal options
                 await selectElement.click();
-                await sleep(200);
+                await sleep(50);
 
                 // Find the option with the desired value
                 const option = await selectElement.findElement(By.css(`option[value="${preferenceValue}"]`));
                 await option.click();
 
                 console.log(`Selected preference ${i + 1}: ${preferenceValue}`);
-                await sleep(CONFIG.selectDelay);
+                await addDelay(5 + i);
             } catch (error) {
                 console.log(`Could not select value ${preferenceValue} in dropdown ${i + 1}:`, error.message);
             }
         }
+
+        // Ensure we've reached target time before submitting
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, CONFIG.totalTimeTaken - elapsed - 100); // Reserve 100ms for submit
+        if (remainingTime > 0) await sleep(remainingTime);
 
         // Click submit button
         console.log('Clicking submit button...');
@@ -157,7 +172,9 @@ async function automateForm() {
 
         console.log('\n========================================');
         console.log('✓ Automation completed successfully!');
-        console.log(`⏱️  Total time: ${timeTaken} milliseconds (${(timeTaken / 1000).toFixed(2)} seconds)`);
+        console.log(`⏱️  Configured time: ${CONFIG.totalTimeTaken}ms (${(CONFIG.totalTimeTaken / 1000).toFixed(2)}s)`);
+        console.log(`⏱️  Actual time: ${timeTaken}ms (${(timeTaken / 1000).toFixed(2)}s)`);
+        console.log(`⏱️  Difference: ${Math.abs(timeTaken - CONFIG.totalTimeTaken)}ms`);
         console.log('========================================\n');
         console.log('Browser will remain open. Close it manually when done.');
 
