@@ -64,15 +64,16 @@ function log(message, type = 'info') {
 
 /**
  * Find an input field by looking for associated labels or common attributes
+ * @param {WebDriver|WebElement} scope - Search scope (driver for whole page, or form element)
  */
-async function findInputByLabel(driver, searchTerms, inputType = 'text') {
+async function findInputByLabel(scope, searchTerms, inputType = 'text') {
     const attempts = [];
 
     // Strategy 1: Find by input name/id containing search terms
     for (const term of searchTerms) {
         attempts.push(
-            driver.findElement(By.css(`input[type="${inputType}"][name*="${term}" i]`)).catch(() => null),
-            driver.findElement(By.css(`input[type="${inputType}"][id*="${term}" i]`)).catch(() => null)
+            scope.findElement(By.css(`input[type="${inputType}"][name*="${term}" i]`)).catch(() => null),
+            scope.findElement(By.css(`input[type="${inputType}"][id*="${term}" i]`)).catch(() => null)
         );
     }
 
@@ -81,14 +82,14 @@ async function findInputByLabel(driver, searchTerms, inputType = 'text') {
         attempts.push(
             (async () => {
                 try {
-                    const labels = await driver.findElements(By.css('label'));
+                    const labels = await scope.findElements(By.css('label'));
                     for (const label of labels) {
                         const text = await label.getText();
                         if (text.toLowerCase().includes(term.toLowerCase())) {
                             // Try to find input by 'for' attribute
                             const forAttr = await label.getAttribute('for').catch(() => null);
                             if (forAttr) {
-                                return await driver.findElement(By.id(forAttr)).catch(() => null);
+                                return await scope.findElement(By.id(forAttr)).catch(() => null);
                             }
                             // Try to find input inside label
                             return await label.findElement(By.css('input')).catch(() => null);
@@ -105,7 +106,7 @@ async function findInputByLabel(driver, searchTerms, inputType = 'text') {
     // Strategy 3: Find by placeholder text
     for (const term of searchTerms) {
         attempts.push(
-            driver.findElement(By.css(`input[type="${inputType}"][placeholder*="${term}" i]`)).catch(() => null)
+            scope.findElement(By.css(`input[type="${inputType}"][placeholder*="${term}" i]`)).catch(() => null)
         );
     }
 
@@ -116,15 +117,19 @@ async function findInputByLabel(driver, searchTerms, inputType = 'text') {
 /**
  * Detect if a form is likely the auction/target form
  */
-async function isTargetForm(driver, form) {
+async function isTargetForm(form, verbose = false) {
     try {
-        // Look for the 4 key fields we need
-        const hasFirstName = await findInputByLabel(driver, ['first', 'fname', 'firstname'], 'text') !== null;
-        const hasLastName = await findInputByLabel(driver, ['last', 'lname', 'lastname'], 'text') !== null;
-        const hasEmail = await findInputByLabel(driver, ['email', 'mail'], 'email') !== null ||
-                         await findInputByLabel(driver, ['email', 'mail'], 'text') !== null;
-        const hasPhone = await findInputByLabel(driver, ['phone', 'mobile', 'tel', 'contact'], 'tel') !== null ||
-                        await findInputByLabel(driver, ['phone', 'mobile', 'tel', 'contact'], 'text') !== null;
+        // Get all inputs and selects in this form for debugging
+        const allInputs = await form.findElements(By.css('input')).catch(() => []);
+        const allSelects = await form.findElements(By.css('select')).catch(() => []);
+
+        // Look for the 4 key fields we need - SEARCH WITHIN THE FORM ELEMENT
+        const hasFirstName = await findInputByLabel(form, ['first', 'fname', 'firstname'], 'text') !== null;
+        const hasLastName = await findInputByLabel(form, ['last', 'lname', 'lastname'], 'text') !== null;
+        const hasEmail = await findInputByLabel(form, ['email', 'mail'], 'email') !== null ||
+                         await findInputByLabel(form, ['email', 'mail'], 'text') !== null;
+        const hasPhone = await findInputByLabel(form, ['phone', 'mobile', 'tel', 'contact'], 'tel') !== null ||
+                        await findInputByLabel(form, ['phone', 'mobile', 'tel', 'contact'], 'text') !== null;
 
         // Also check if form has select dropdowns (for preferences)
         const selects = await form.findElements(By.css('select')).catch(() => []);
@@ -133,10 +138,14 @@ async function isTargetForm(driver, form) {
         // Consider it a target form if it has at least 3 of the 4 fields AND has selects
         const matchingFields = [hasFirstName, hasLastName, hasEmail, hasPhone].filter(Boolean).length;
 
-        log(`Form analysis: ${matchingFields}/4 fields found, ${selects.length} dropdowns`, 'info');
+        // Only log if verbose mode is on OR if we found a matching form
+        if (verbose || matchingFields >= 3) {
+            log(`Form: ${allInputs.length} inputs, ${allSelects.length} selects | Match: ${matchingFields}/4 fields (first:${hasFirstName}, last:${hasLastName}, email:${hasEmail}, phone:${hasPhone})`, matchingFields >= 3 ? 'success' : 'info');
+        }
 
         return matchingFields >= 3 && hasSelects;
     } catch (error) {
+        if (verbose) log(`Form analysis error: ${error.message}`, 'error');
         return false;
     }
 }
@@ -144,7 +153,7 @@ async function isTargetForm(driver, form) {
 /**
  * Fill the target form with user data
  */
-async function fillForm(driver, form) {
+async function fillForm(form) {
     log('Starting to fill form...', 'info');
     const startTime = Date.now();
 
@@ -168,8 +177,8 @@ async function fillForm(driver, form) {
             if (remainingDelay > 0) await sleep(remainingDelay);
         };
 
-        // Fill first name
-        const firstNameInput = await findInputByLabel(driver, ['first', 'fname', 'firstname'], 'text');
+        // Fill first name - SEARCH WITHIN THE FORM
+        const firstNameInput = await findInputByLabel(form, ['first', 'fname', 'firstname'], 'text');
         if (firstNameInput) {
             await firstNameInput.clear();
             await firstNameInput.sendKeys(CONFIG.userInfo.firstName);
@@ -177,8 +186,8 @@ async function fillForm(driver, form) {
             await addDelay(1);
         }
 
-        // Fill last name
-        const lastNameInput = await findInputByLabel(driver, ['last', 'lname', 'lastname'], 'text');
+        // Fill last name - SEARCH WITHIN THE FORM
+        const lastNameInput = await findInputByLabel(form, ['last', 'lname', 'lastname'], 'text');
         if (lastNameInput) {
             await lastNameInput.clear();
             await lastNameInput.sendKeys(CONFIG.userInfo.lastName);
@@ -186,10 +195,10 @@ async function fillForm(driver, form) {
             await addDelay(2);
         }
 
-        // Fill email
-        let emailInput = await findInputByLabel(driver, ['email', 'mail'], 'email');
+        // Fill email - SEARCH WITHIN THE FORM
+        let emailInput = await findInputByLabel(form, ['email', 'mail'], 'email');
         if (!emailInput) {
-            emailInput = await findInputByLabel(driver, ['email', 'mail'], 'text');
+            emailInput = await findInputByLabel(form, ['email', 'mail'], 'text');
         }
         if (emailInput) {
             await emailInput.clear();
@@ -198,10 +207,10 @@ async function fillForm(driver, form) {
             await addDelay(3);
         }
 
-        // Fill phone
-        let phoneInput = await findInputByLabel(driver, ['phone', 'mobile', 'tel', 'contact'], 'tel');
+        // Fill phone - SEARCH WITHIN THE FORM
+        let phoneInput = await findInputByLabel(form, ['phone', 'mobile', 'tel', 'contact'], 'tel');
         if (!phoneInput) {
-            phoneInput = await findInputByLabel(driver, ['phone', 'mobile', 'tel', 'contact'], 'text');
+            phoneInput = await findInputByLabel(form, ['phone', 'mobile', 'tel', 'contact'], 'text');
         }
         if (phoneInput) {
             await phoneInput.clear();
@@ -288,25 +297,64 @@ async function monitorPage(driver) {
                 log(`Monitoring... (${monitoringCount} checks)`, 'watching');
             }
 
-            // Find all forms on the page
-            const forms = await driver.findElements(By.css('form'));
+            // Enable verbose logging every 10th check
+            const verbose = monitoringCount % 10 === 0;
 
-            if (forms.length > 0 && monitoringCount % 10 === 0) {
-                log(`Found ${forms.length} form(s) on page, analyzing...`, 'info');
+            // FIRST: Check for forms in the main page
+            const forms = await driver.findElements(By.css('form'));
+            if (forms.length > 0 && verbose) {
+                log(`Found ${forms.length} form(s) on main page`, 'info');
             }
 
-            // Check each form to see if it's our target
             for (const form of forms) {
-                const isTarget = await isTargetForm(driver, form);
-
+                const isTarget = await isTargetForm(form, verbose);
                 if (isTarget) {
-                    log('TARGET FORM FOUND! Starting auto-fill...', 'success');
-                    const success = await fillForm(driver, form);
-
+                    log('TARGET FORM FOUND ON MAIN PAGE! Starting auto-fill...', 'success');
+                    const success = await fillForm(form);
                     if (success) {
                         log('Mission accomplished! Keeping browser open for review.', 'success');
-                        // Keep monitoring in case of errors/resubmission needed
                         await sleep(5000);
+                    }
+                }
+            }
+
+            // SECOND: Check for forms inside iframes
+            const iframes = await driver.findElements(By.css('iframe'));
+            if (iframes.length > 0 && verbose) {
+                log(`Found ${iframes.length} iframe(s), checking each...`, 'info');
+            }
+
+            for (let i = 0; i < iframes.length; i++) {
+                try {
+                    // Switch to iframe
+                    await driver.switchTo().frame(i);
+
+                    // Find forms inside this iframe
+                    const iframeForms = await driver.findElements(By.css('form'));
+
+                    if (iframeForms.length > 0 && verbose) {
+                        log(`Found ${iframeForms.length} form(s) in iframe #${i}`, 'info');
+                    }
+
+                    for (const form of iframeForms) {
+                        const isTarget = await isTargetForm(form, verbose);
+                        if (isTarget) {
+                            log(`TARGET FORM FOUND IN IFRAME #${i}! Starting auto-fill...`, 'success');
+                            const success = await fillForm(form);
+                            if (success) {
+                                log('Mission accomplished! Keeping browser open for review.', 'success');
+                                await sleep(5000);
+                            }
+                        }
+                    }
+
+                    // Switch back to main content
+                    await driver.switchTo().defaultContent();
+                } catch (iframeError) {
+                    // Switch back to main content if error
+                    await driver.switchTo().defaultContent();
+                    if (verbose) {
+                        log(`Error checking iframe #${i}: ${iframeError.message}`, 'warning');
                     }
                 }
             }
@@ -315,6 +363,11 @@ async function monitorPage(driver) {
             await sleep(CONFIG.checkInterval);
 
         } catch (error) {
+            // Make sure we're back to default content
+            try {
+                await driver.switchTo().defaultContent();
+            } catch (e) {}
+
             // If we get a stale element or navigation error, the page might have reloaded
             if (error.name === 'StaleElementReferenceError' ||
                 error.message.includes('navigation') ||
@@ -409,8 +462,9 @@ async function main() {
     }
 
     // Use a separate user data directory to avoid conflicts with running Chrome
+    // Add process ID to make it unique so multiple scripts can run simultaneously
     const userDataDir = getUserDataDir();
-    const botProfileDir = userDataDir ? `${userDataDir}-bot` : path.join(os.tmpdir(), 'chrome-bot-profile');
+    const botProfileDir = userDataDir ? `${userDataDir}-bot-${process.pid}` : path.join(os.tmpdir(), `chrome-bot-profile-${process.pid}`);
 
     options.addArguments(`--user-data-dir=${botProfileDir}`);
     log(`Using bot profile at: ${botProfileDir}`, 'info');
